@@ -852,6 +852,55 @@ def api_reading_item(item_id):
         conn.close()
         return jsonify({"status": "success"})
 
+###############################################################################
+# API Endpoints - Useful Links
+###############################################################################
+
+@app.route("/api/links", methods=["GET", "POST"])
+def api_links():
+    """Useful links collection endpoint."""
+    conn = db_connect()
+    if request.method == "GET":
+        links = conn.execute("SELECT * FROM useful_links ORDER BY created_at DESC").fetchall()
+        conn.close()
+        return jsonify({"data": [dict(link) for link in links]})
+
+    # POST - Create new link
+    data = request.get_json()
+    conn.execute(
+        "INSERT INTO useful_links (title, url, description, category) VALUES (?, ?, ?, ?)",
+        (data.get("title"), data.get("url"), data.get("description"), data.get("category", "tools"))
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"}), 201
+
+@app.route("/api/links/<int:link_id>", methods=["GET", "PUT", "DELETE"])
+def api_link(link_id):
+    """Single useful link endpoint."""
+    conn = db_connect()
+    if request.method == "GET":
+        link = conn.execute("SELECT * FROM useful_links WHERE id = ?", (link_id,)).fetchone()
+        conn.close()
+        return jsonify({"data": dict(link)})
+        
+    elif request.method == "PUT":
+        data = request.get_json()
+        conn.execute(
+            "UPDATE useful_links SET title=?, url=?, description=?, category=? WHERE id=?",
+            (data.get("title"), data.get("url"), data.get("description"), data.get("category"), link_id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+
+    elif request.method == "DELETE":
+        conn.execute("DELETE FROM useful_links WHERE id = ?", (link_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+
+
 
 ###############################################################################
 # Error Handlers
