@@ -808,6 +808,52 @@ def api_import_checklist():
     return jsonify({"status": "success"}), 201
 
 ###############################################################################
+# API Endpoints - Reading List
+###############################################################################
+
+
+@app.route("/api/reading", methods=["GET", "POST"])
+def api_reading_list():
+    """Reading list collection endpoint."""
+    conn = db_connect()
+    if request.method == "GET":
+        items = conn.execute("SELECT * FROM reading_list ORDER BY created_at DESC").fetchall()
+        conn.close()
+        return jsonify({"data": [dict(item) for item in items]})
+
+    # POST - Create new reading list item
+    data = request.get_json()
+    conn.execute(
+        "INSERT INTO reading_list (title, url, description, category) VALUES (?, ?, ?, ?)",
+        (data.get("title"), data.get("url"), data.get("description"), data.get("category", "article"))
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"}), 201
+
+@app.route("/api/reading/<int:item_id>", methods=["PUT", "DELETE"])
+def api_reading_item(item_id):
+    """Single reading list item endpoint."""
+    conn = db_connect()
+    if request.method == "PUT":
+        data = request.get_json()
+        conn.execute(
+            "UPDATE reading_list SET title=?, url=?, description=?, category=?, is_read=? WHERE id=?",
+            (data.get("title"), data.get("url"), data.get("description"), 
+             data.get("category"), 1 if data.get("is_read") else 0, item_id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+
+    elif request.method == "DELETE":
+        conn.execute("DELETE FROM reading_list WHERE id = ?", (item_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+
+
+###############################################################################
 # Error Handlers
 ###############################################################################
 
