@@ -1,92 +1,125 @@
-<!-- templates/reading.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>Reading List</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
-</head>
-<body>
-<h1>Reading List</h1>
-<button onclick="showAddReadItem()">Add Item</button>
-<div id="readingItems"></div>
+{% extends "base.html" %}
 
-<!-- Add/Edit Modal -->
-<div id="readItemModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="hideReadModal()">&times;</span>
-    <h2>Add/Edit Reading Item</h2>
-    <form id="readForm" onsubmit="saveReadItem(event)">
-      <input type="hidden" id="readId" />
-      <label>Title:</label><input type="text" id="readTitle" required />
-      <label>URL:</label><input type="url" id="readURL" required />
-      <button type="submit">Save</button>
-    </form>
-  </div>
+{% block title %}Reading List - Bug Hunter Enhanced{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 text-dark fw-bold">
+                    <i class="bi bi-book me-2"></i>Reading List
+                </h1>
+                <p class="text-muted">Curated articles, blog posts, and research papers</p>
+            </div>
+            <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#readingModal">
+                <i class="bi bi-plus-lg me-2"></i>Add Item
+            </button>
+        </div>
+    </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/api.js') }}"></script>
-<script>
-  let readItems = [];
-  async function loadReadItems() {
-    const res = await fetch('/api/readings');
-    const data = await res.json();
-    readItems = data.data;
-    renderReadItems();
-  }
-  function renderReadItems() {
-    const container = document.getElementById('readingItems');
-    container.innerHTML = '';
-    readItems.forEach(item => {
-      container.innerHTML += `<div class="read-item">
-        <h3>${item.title}</h3>
-        <a href="${item.url}" target="_blank">${item.url}</a>
-        <button onclick="editReadItem(${item.id})">Edit</button>
-        <button onclick="deleteReadItem(${item.id})">Delete</button>
-      </div>`;
-    });
-  }
-  function showAddReadItem() {
-    document.getElementById('readId').value = '';
-    document.getElementById('readTitle').value = '';
-    document.getElementById('readURL').value = '';
-    document.getElementById('readItemModal').style.display='block';
-  }
-  function hideReadModal() {
-    document.getElementById('readItemModal').style.display='none';
-  }
-  async function saveReadItem(e) {
-    e.preventDefault();
-    const id = document.getElementById('readId').value;
-    const payload={
-      title: document.getElementById('readTitle').value,
-      url: document.getElementById('readURL').value
-    };
-    const url = id ? `/api/readings/${id}` : '/api/readings';
-    const method = id ? 'PUT' : 'POST';
-    await fetch(url, {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    loadReadItems(); hideReadModal();
-  }
-  async function deleteReadItem(id) {
-    if(confirm('Delete this item?')){
-      await fetch(`/api/readings/${id}`,{ method:'DELETE' });
-      loadReadItems();
-    }
-  }
-  async function editReadItem(id) {
-    const item = readItems.find(i=>i.id===id);
-    document.getElementById('readId').value = item.id;
-    document.getElementById('readTitle').value = item.title;
-    document.getElementById('readURL').value = item.url;
-    document.getElementById('readItemModal').style.display='block';
-  }
+<div class="row g-4">
+    {% for item in reading %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h5><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></h5>
+                    <p class="text-muted mb-0">{{ item.description or 'No description' }}</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="editItem({{ item.id }})">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ item.id }})">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+        <h5 class="mt-3">Your reading list is empty.</h5>
+        <p class="text-muted">Add articles and resources to track your learning.</p>
+    </div>
+    {% endfor %}
+</div>
 
-  // Load on page load
-  loadReadItems();
+<div class="modal fade" id="readingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add to Reading List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="readingForm">
+                <div class="modal-body">
+                    <input type="hidden" id="itemId" name="id">
+                    <div class="mb-3">
+                        <label for="itemTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="itemTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemUrl" class="form-label">URL</label>
+                        <input type="url" class="form-control" id="itemUrl" name="url" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="itemDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentItemId = null;
+    const modal = new bootstrap.Modal(document.getElementById('readingModal'));
+
+    document.getElementById('readingForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        const url = currentItemId ? `/api/reading/${currentItemId}` : '/api/reading';
+        const method = currentItemId ? 'PUT' : 'POST';
+
+        try {
+            await API.request(url, { method: method, body: JSON.stringify(data) });
+            modal.hide();
+            location.reload();
+        } catch (error) {
+            console.error('Failed to save item:', error);
+        }
+    });
+
+    function editItem(id) {
+        currentItemId = id;
+        API.request(`/api/reading/${id}`).then(response => {
+            const item = response.data;
+            document.getElementById('itemId').value = item.id;
+            document.getElementById('itemTitle').value = item.title;
+            document.getElementById('itemUrl').value = item.url;
+            document.getElementById('itemDescription').value = item.description;
+            modal.show();
+        });
+    }
+
+    async function deleteItem(id) {
+        if (confirm('Are you sure you want to delete this item?')) {
+            try {
+                await API.request(`/api/reading/${id}`, { method: 'DELETE' });
+                location.reload();
+            } catch (error) {
+                console.error('Failed to delete item:', error);
+            }
+        }
+    }
 </script>
-</body>
-</html>
+{% endblock %}
