@@ -24,7 +24,6 @@
     </div>
 </div>
 
-<!-- Checklist Grid -->
 <div class="row g-4" id="checklistGrid">
     {% for checklist in checklists %}
     <div class="col-lg-4 col-md-6" data-checklist-id="{{ checklist.id }}">
@@ -65,7 +64,6 @@
                     {% endif %}
                 </div>
                 
-                <!-- Progress Bar -->
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <small class="text-muted">Progress</small>
@@ -107,7 +105,6 @@
     {% endfor %}
 </div>
 
-<!-- Checklist Modal -->
 <div class="modal fade" id="checklistModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -174,7 +171,6 @@
     </div>
 </div>
 
-<!-- Import from GitHub Modal -->
 <div class="modal fade" id="importModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -215,7 +211,6 @@
     </div>
 </div>
 
-<!-- View Checklist Modal -->
 <div class="modal fade" id="viewChecklistModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -228,8 +223,7 @@
             </div>
             <div class="modal-body">
                 <div id="viewChecklistContent">
-                    <!-- Checklist content will be loaded here -->
-                </div>
+                    </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -241,7 +235,6 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteChecklistModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
