@@ -732,6 +732,80 @@ def api_refresh_news():
     """Refresh news feed."""
     articles = fetch_rss_news()
     return jsonify({"status": "success", "count": len(articles)})
+    
+    
+###############################################################################
+# API Endpoints - Checklists
+###############################################################################
+
+@app.route("/api/checklists", methods=["GET", "POST"])
+def api_checklists():
+    """Checklists collection endpoint."""
+    conn = db_connect()
+    if request.method == "GET":
+        checklists = conn.execute("SELECT * FROM security_checklists ORDER BY created_at DESC").fetchall()
+        conn.close()
+        return jsonify({"data": [dict(c) for c in checklists]})
+    
+    # POST - Create new checklist
+    data = request.get_json()
+    conn.execute(
+        "INSERT INTO security_checklists (name, type, description, items, is_template) VALUES (?, ?, ?, ?, ?)",
+        (data.get("name"), data.get("type", "web"), data.get("description"), 
+         data.get("items"), 1 if data.get("is_template") else 0)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"}), 201
+
+@app.route("/api/checklists/<int:checklist_id>", methods=["GET", "PUT", "DELETE"])
+def api_checklist(checklist_id):
+    """Single checklist endpoint."""
+    conn = db_connect()
+    
+    if request.method == "GET":
+        checklist = conn.execute("SELECT * FROM security_checklists WHERE id = ?", (checklist_id,)).fetchone()
+        conn.close()
+        if not checklist:
+            abort(404)
+        return jsonify({"data": dict(checklist)})
+    
+    elif request.method == "PUT":
+        data = request.get_json()
+        conn.execute(
+            "UPDATE security_checklists SET name=?, type=?, description=?, items=?, is_template=? WHERE id=?",
+            (data.get("name"), data.get("type"), data.get("description"), 
+             data.get("items"), 1 if data.get("is_template") else 0, checklist_id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+    
+    elif request.method == "DELETE":
+        conn.execute("DELETE FROM security_checklists WHERE id = ?", (checklist_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+
+@app.route("/api/checklists/import", methods=["POST"])
+def api_import_checklist():
+    """Import checklist from GitHub URL."""
+    # This is a placeholder for the actual import logic
+    data = request.get_json()
+    github_url = data.get("github_url")
+    if not github_url:
+        return jsonify({"error": "GitHub URL is required"}), 400
+    
+    # In a real implementation, you would fetch and parse the content from the URL.
+    # For now, we just save the URL.
+    conn = db_connect()
+    conn.execute(
+        "INSERT INTO security_checklists (name, source_url, type, items) VALUES (?, ?, ?, ?)",
+        ("Imported from GitHub", github_url, "web", f"Checklist items from {github_url}")
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"}), 201
 
 ###############################################################################
 # Error Handlers
