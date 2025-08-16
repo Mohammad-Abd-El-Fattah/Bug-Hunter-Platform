@@ -1,0 +1,90 @@
+<!-- templates/targets.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Platforms & Targets</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+</head>
+<body>
+<h1>Platforms / Targets</h1>
+<button onclick="showAddTarget()">Add New Target</button>
+<table>
+  <thead><tr><th>ID</th><th>Name</th><th>URL</th><th>Actions</th></tr></thead>
+  <tbody id="targetsTable"></tbody>
+</table>
+
+<!-- Modal for Add/Edit Target -->
+<div id="targetModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="hideTargetModal()">&times;</span>
+    <h2>Add/Edit Target</h2>
+    <form id="targetForm" onsubmit="saveTarget(event)">
+      <input type="hidden" id="targetId"/>
+      <label>Name:</label><input type="text" id="targetName" required />
+      <label>URL:</label><input type="url" id="targetURL" required />
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script>
+  let targets = [];
+  async function loadTargets() {
+    const res = await fetch('/api/targets');
+    const data = await res.json();
+    targets = data.data;
+    renderTargets();
+  }
+  function renderTargets() {
+    const tbody = document.getElementById('targetsTable');
+    tbody.innerHTML='';
+    targets.forEach(t => {
+      tbody.innerHTML += `<tr>
+        <td>${t.id}</td>
+        <td>${t.domain}</td>
+        <td>${t.platform}</td>
+        <td>
+          <button onclick="editTarget(${t.id})">Edit</button>
+          <button onclick="deleteTarget(${t.id})">Delete</button>
+        </td>
+      </tr>`;
+    });
+  }
+  function showAddTarget() {
+    document.getElementById('targetId').value='';
+    document.getElementById('targetName').value='';
+    document.getElementById('targetURL').value='';
+    document.getElementById('targetModal').style.display='block';
+  }
+  function hideTargetModal() {
+    document.getElementById('targetModal').style.display='none';
+  }
+  async function saveTarget(e) {
+    e.preventDefault();
+    const id = document.getElementById('targetId').value;
+    const payload = {
+      name: document.getElementById('targetName').value,
+      url: document.getElementById('targetURL').value
+    };
+    const url = id ? `/api/targets/${id}` : '/api/targets';
+    const method = id ? 'PUT' : 'POST';
+    await fetch(url, {
+      method: method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    loadTargets(); hideTargetModal();
+  }
+  async function deleteTarget(id) {
+    if(confirm('Delete this target?')){
+      await fetch(`/api/targets/${id}`, { method:'DELETE' });
+      loadTargets();
+    }
+  }
+  // Load targets on page load
+  loadTargets();
+</script>
+</body>
+</html>

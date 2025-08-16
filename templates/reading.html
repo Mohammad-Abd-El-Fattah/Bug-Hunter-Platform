@@ -1,0 +1,92 @@
+<!-- templates/reading.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Reading List</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+</head>
+<body>
+<h1>Reading List</h1>
+<button onclick="showAddReadItem()">Add Item</button>
+<div id="readingItems"></div>
+
+<!-- Add/Edit Modal -->
+<div id="readItemModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="hideReadModal()">&times;</span>
+    <h2>Add/Edit Reading Item</h2>
+    <form id="readForm" onsubmit="saveReadItem(event)">
+      <input type="hidden" id="readId" />
+      <label>Title:</label><input type="text" id="readTitle" required />
+      <label>URL:</label><input type="url" id="readURL" required />
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script>
+  let readItems = [];
+  async function loadReadItems() {
+    const res = await fetch('/api/readings');
+    const data = await res.json();
+    readItems = data.data;
+    renderReadItems();
+  }
+  function renderReadItems() {
+    const container = document.getElementById('readingItems');
+    container.innerHTML = '';
+    readItems.forEach(item => {
+      container.innerHTML += `<div class="read-item">
+        <h3>${item.title}</h3>
+        <a href="${item.url}" target="_blank">${item.url}</a>
+        <button onclick="editReadItem(${item.id})">Edit</button>
+        <button onclick="deleteReadItem(${item.id})">Delete</button>
+      </div>`;
+    });
+  }
+  function showAddReadItem() {
+    document.getElementById('readId').value = '';
+    document.getElementById('readTitle').value = '';
+    document.getElementById('readURL').value = '';
+    document.getElementById('readItemModal').style.display='block';
+  }
+  function hideReadModal() {
+    document.getElementById('readItemModal').style.display='none';
+  }
+  async function saveReadItem(e) {
+    e.preventDefault();
+    const id = document.getElementById('readId').value;
+    const payload={
+      title: document.getElementById('readTitle').value,
+      url: document.getElementById('readURL').value
+    };
+    const url = id ? `/api/readings/${id}` : '/api/readings';
+    const method = id ? 'PUT' : 'POST';
+    await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    loadReadItems(); hideReadModal();
+  }
+  async function deleteReadItem(id) {
+    if(confirm('Delete this item?')){
+      await fetch(`/api/readings/${id}`,{ method:'DELETE' });
+      loadReadItems();
+    }
+  }
+  async function editReadItem(id) {
+    const item = readItems.find(i=>i.id===id);
+    document.getElementById('readId').value = item.id;
+    document.getElementById('readTitle').value = item.title;
+    document.getElementById('readURL').value = item.url;
+    document.getElementById('readItemModal').style.display='block';
+  }
+
+  // Load on page load
+  loadReadItems();
+</script>
+</body>
+</html>

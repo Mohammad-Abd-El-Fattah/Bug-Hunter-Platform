@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Security Checklist - Bug Hunter Enhanced{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 text-dark fw-bold">
+                    <i class="bi bi-check2-square me-2"></i>Security Checklist
+                </h1>
+                <p class="text-muted">Manage security testing checklists and import from GitHub</p>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#checklistModal" onclick="openChecklistModal()">
+                    <i class="bi bi-plus-lg me-2"></i>Add Checklist
+                </button>
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-github me-2"></i>Import from GitHub
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Checklist Grid -->
+<div class="row g-4" id="checklistGrid">
+    {% for checklist in checklists %}
+    <div class="col-lg-4 col-md-6" data-checklist-id="{{ checklist.id }}">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="card-title">{{ checklist.name }}</h5>
+                        <span class="badge bg-{{ 'primary' if checklist.type == 'web' else 'secondary' }}">
+                            {{ checklist.type|title }}
+                        </span>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="editChecklist({{ checklist.id }})">
+                                    <i class="bi bi-pencil me-2"></i>Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="deleteChecklist({{ checklist.id }})">
+                                    <i class="bi bi-trash me-2"></i>Delete
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="text-muted">{{ checklist.description or 'No description available' }}</p>
+                    {% if checklist.source_url %}
+                    <small class="text-primary">
+                        <i class="bi bi-github me-1"></i>Imported from GitHub
+                    </small>
+                    {% endif %}
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Progress</small>
+                        <small class="text-muted">{{ checklist.progress or 0 }}%</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-gradient" role="progressbar" 
+                             style="width: {{ checklist.progress or 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        {{ checklist.created_at.split(' ')[0] if checklist.created_at else 'Unknown' }}
+                    </small>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewChecklist({{ checklist.id }})">
+                        <i class="bi bi-eye me-1"></i>View
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-check2-square text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No checklists yet</h4>
+            <p class="text-muted">Create your first security checklist or import from GitHub</p>
+            <div class="btn-group">
+                <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#checklistModal" onclick="openChecklistModal()">
+                    <i class="bi bi-plus-lg me-2"></i>Create Checklist
+                </button>
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-github me-2"></i>Import from GitHub
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Checklist Modal -->
+<div class="modal fade" id="checklistModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-check2-square me-2"></i>
+                    <span id="checklistModalTitle">Add Checklist</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="checklistForm">
+                <div class="modal-body">
+                    <input type="hidden" id="checklistId" name="id">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="checklistName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="checklistName" name="name" required
+                                   placeholder="Web Application Security Checklist">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="checklistType" class="form-label">Type</label>
+                            <select class="form-select" id="checklistType" name="type">
+                                <option value="web">Web Application</option>
+                                <option value="mobile">Mobile Application</option>
+                                <option value="api">API Testing</option>
+                                <option value="network">Network Security</option>
+                                <option value="desktop">Desktop Application</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="checklistDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="checklistDescription" name="description" rows="3"
+                                      placeholder="Description of this security checklist"></textarea>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="checklistItems" class="form-label">Checklist Items</label>
+                            <textarea class="form-control" id="checklistItems" name="items" rows="10" required
+                                      placeholder="Enter checklist items (one per line):&#10;- SQL Injection testing&#10;- XSS vulnerability assessment&#10;- Authentication bypass testing&#10;- Authorization checks"></textarea>
+                            <div class="form-text">Enter one item per line. Use - or * for bullet points</div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isTemplate" name="is_template">
+                                <label class="form-check-label" for="isTemplate">
+                                    Save as template for reuse
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="bi bi-check-lg me-2"></i>Save Checklist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import from GitHub Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-github me-2"></i>Import from GitHub
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="importForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="githubUrl" class="form-label">GitHub Raw URL</label>
+                        <input type="url" class="form-control" id="githubUrl" name="github_url" required
+                               placeholder="https://raw.githubusercontent.com/user/repo/main/checklist.md">
+                        <div class="form-text">
+                            Enter the raw GitHub URL of a markdown file containing a security checklist
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Popular Repositories:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><a href="#" onclick="setGithubUrl('https://raw.githubusercontent.com/OWASP/wstg/master/checklist/WSTG-Checklist.md')">OWASP Web Security Testing Guide</a></li>
+                            <li><a href="#" onclick="setGithubUrl('https://raw.githubusercontent.com/0xRadi/OWASP-Web-Checklist/master/README.md')">OWASP Web Checklist</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="bi bi-download me-2"></i>Import Checklist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Checklist Modal -->
+<div class="modal fade" id="viewChecklistModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-eye me-2"></i>
+                    <span id="viewChecklistTitle">Checklist Details</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewChecklistContent">
+                    <!-- Checklist content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editChecklistFromView()">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteChecklistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this checklist?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteChecklist">
+                    <i class="bi bi-trash me-2"></i>Delete Checklist
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentChecklistId = null;
+let currentViewChecklistId = null;
+
+// Open checklist modal for add/edit
+function openChecklistModal(checklistId = null) {
+    const modal = document.getElementById('checklistModal');
+    const form = document.getElementById('checklistForm');
+    const title = document.getElementById('checklistModalTitle');
+    
+    // Reset form
+    form.reset();
+    
+    if (checklistId) {
+        currentChecklistId = checklistId;
+        title.textContent = 'Edit Checklist';
+        loadChecklistData(checklistId);
+    } else {
+        currentChecklistId = null;
+        title.textContent = 'Add Checklist';
+        document.getElementById('checklistType').value = 'web';
+    }
+}
+
+// Load checklist data for editing
+async function loadChecklistData(checklistId) {
+    try {
+        const response = await API.request(`/api/checklists/${checklistId}`);
+        const checklist = response.data;
+        
+        document.getElementById('checklistId').value = checklist.id;
+        document.getElementById('checklistName').value = checklist.name || '';
+        document.getElementById('checklistType').value = checklist.type || 'web';
+        document.getElementById('checklistDescription').value = checklist.description || '';
+        document.getElementById('checklistItems').value = checklist.items || '';
+        document.getElementById('isTemplate').checked = checklist.is_template || false;
+        
+    } catch (error) {
+        API.showToast('Error loading checklist data', 'error');
+    }
+}
+
+// View checklist details
+async function viewChecklist(checklistId) {
+    currentViewChecklistId = checklistId;
+    try {
+        const response = await API.request(`/api/checklists/${checklistId}`);
+        const checklist = response.data;
+        
+        document.getElementById('viewChecklistTitle').textContent = checklist.name;
+        
+        const content = document.getElementById('viewChecklistContent');
+        
+        // Parse checklist items
+        const items = checklist.items ? checklist.items.split('\n').filter(item => item.trim()) : [];
+        const itemsHtml = items.map(item => {
+            const cleanItem = item.replace(/^[*-]\s*/, '');
+            return `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="item_${Math.random()}">
+                    <label class="form-check-label">${cleanItem}</label>
+                </div>
+            `;
+        }).join('');
+        
+        content.innerHTML = `
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Type:</strong> ${checklist.type ? checklist.type.charAt(0).toUpperCase() + checklist.type.slice(1) : 'Unknown'}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Progress:</strong> ${checklist.progress || 0}%
+                    </div>
+                </div>
+                ${checklist.description ? `
+                <div class="mt-2">
+                    <strong>Description:</strong>
+                    <p class="text-muted">${checklist.description}</p>
+                </div>
+                ` : ''}
+                ${checklist.source_url ? `
+                <div class="mt-2">
+                    <strong>Source:</strong>
+                    <a href="${checklist.source_url}" target="_blank" class="text-decoration-none">
+                        <i class="bi bi-github me-1"></i>GitHub Repository
+                    </a>
+                </div>
+                ` : ''}
+            </div>
+            <hr>
+            <h6>Checklist Items:</h6>
+            <div class="checklist-items">
+                ${itemsHtml || '<p class="text-muted">No items available</p>'}
+            </div>
+        `;
+        
+        new bootstrap.Modal(document.getElementById('viewChecklistModal')).show();
+        
+    } catch (error) {
+        API.showToast('Error loading checklist details', 'error');
+    }
+}
+
+// Edit checklist from view modal
+function editChecklistFromView() {
+    bootstrap.Modal.getInstance(document.getElementById('viewChecklistModal')).hide();
+    editChecklist(currentViewChecklistId);
+}
+
+// Edit checklist
+function editChecklist(checklistId) {
+    openChecklistModal(checklistId);
+    new bootstrap.Modal(document.getElementById('checklistModal')).show();
+}
+
+// Delete checklist
+function deleteChecklist(checklistId) {
+    currentChecklistId = checklistId;
+    new bootstrap.Modal(document.getElementById('deleteChecklistModal')).show();
+}
+
+// Set GitHub URL for import
+function setGithubUrl(url) {
+    document.getElementById('githubUrl').value = url;
+}
+
+// Handle form submission
+document.getElementById('checklistForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    data.is_template = document.getElementById('isTemplate').checked;
+    
+    try {
+        const url = currentChecklistId ? `/api/checklists/${currentChecklistId}` : '/api/checklists';
+        const method = currentChecklistId ? 'PUT' : 'POST';
+        
+        await API.request(url, {
+            method: method,
+            body: JSON.stringify(data)
+        });
+        
+        API.showToast(`Checklist ${currentChecklistId ? 'updated' : 'created'} successfully!`, 'success');
+        bootstrap.Modal.getInstance(document.getElementById('checklistModal')).hide();
+        
+        // Reload page to show changes
+        setTimeout(() => location.reload(), 1000);
+        
+    } catch (error) {
+        API.showToast(error.message || 'Error saving checklist', 'error');
+    }
+});
+
+// Handle import form submission
+document.getElementById('importForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        await API.importChecklist(data.github_url);
+        
+        API.showToast('Checklist imported successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+        
+        // Reload page to show changes
+        setTimeout(() => location.reload(), 1000);
+        
+    } catch (error) {
+        API.showToast(error.message || 'Error importing checklist', 'error');
+    }
+});
+
+// Handle delete confirmation
+document.getElementById('confirmDeleteChecklist').addEventListener('click', async function() {
+    if (!currentChecklistId) return;
+    
+    try {
+        await API.request(`/api/checklists/${currentChecklistId}`, {
+            method: 'DELETE'
+        });
+        
+        API.showToast('Checklist deleted successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('deleteChecklistModal')).hide();
+        
+        // Remove the checklist card from DOM
+        const checklistCard = document.querySelector(`[data-checklist-id="${currentChecklistId}"]`);
+        if (checklistCard) {
+            checklistCard.remove();
+        }
+        
+        // Check if no checklists left
+        const remainingChecklists = document.querySelectorAll('[data-checklist-id]');
+        if (remainingChecklists.length === 0) {
+            location.reload();
+        }
+        
+    } catch (error) {
+        API.showToast(error.message || 'Error deleting checklist', 'error');
+    }
+});
+</script>
+{% endblock %}

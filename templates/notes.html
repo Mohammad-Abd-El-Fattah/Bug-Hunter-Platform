@@ -1,0 +1,101 @@
+<!-- templates/notes.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Personal Notes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+</head>
+<body>
+  <h1>My Personal Notes</h1>
+  <button onclick="showAddNoteModal()">Add Note</button>
+  <div id="notesContainer"></div>
+
+  <!-- Note Modal -->
+  <div id="noteModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="hideNoteModal()">&times;</span>
+      <h2>Add/Edit Note</h2>
+      <form id="noteForm" onsubmit="saveNote(event)">
+        <input type="hidden" id="noteId" />
+        <label>Title:</label>
+        <input type="text" id="noteTitle" required />
+        <label>Content:</label>
+        <textarea id="noteContent"></textarea>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+  <script>
+    let notes = [];
+    async function loadNotes() {
+      const res = await fetch('/api/notes');
+      const data = await res.json();
+      notes = data.data;
+      renderNotes();
+    }
+    function renderNotes() {
+      const container = document.getElementById('notesContainer');
+      container.innerHTML = '';
+      notes.forEach(note => {
+        container.innerHTML += `<div class="note">
+          <h3>${note.title}</h3>
+          <p>${note.content}</p>
+          <button onclick="editNote(${note.id})">Edit</button>
+          <button onclick="deleteNote(${note.id})">Delete</button>
+        </div>`;
+      });
+    }
+    function showAddNoteModal() {
+      document.getElementById('noteId').value = '';
+      document.getElementById('noteTitle').value = '';
+      document.getElementById('noteContent').value = '';
+      document.getElementById('noteModal').style.display = 'block';
+    }
+    function hideNoteModal() {
+      document.getElementById('noteModal').style.display = 'none';
+    }
+    async function saveNote(e) {
+      e.preventDefault();
+      const id = document.getElementById('noteId').value;
+      const payload = {
+        title: document.getElementById('noteTitle').value,
+        content: document.getElementById('noteContent').value
+      };
+      if (id) {
+        await fetch(`/api/notes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+      loadNotes();
+      hideNoteModal();
+    }
+    async function deleteNote(id) {
+      if(confirm('Delete this note?')){
+        await fetch(`/api/notes/${id}`, { method:'DELETE' });
+        loadNotes();
+      }
+    }
+    async function editNote(id) {
+      const note = notes.find(n => n.id === id);
+      document.getElementById('noteId').value = note.id;
+      document.getElementById('noteTitle').value = note.title;
+      document.getElementById('noteContent').value = note.content;
+      document.getElementById('noteModal').style.display = 'block';
+    }
+
+    // Load notes on page load
+    loadNotes();
+  </script>
+</body>
+</html>

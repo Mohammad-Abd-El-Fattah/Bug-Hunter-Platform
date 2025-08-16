@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Tips & Tricks - Bug Hunter{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Tips & Tricks</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
+    <h1 class="h2 text-gradient">
+        <i class="fas fa-lightbulb me-3"></i>
+        Tips & Tricks
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-primary" onclick="addTip()">
+            <i class="fas fa-plus me-2"></i>Add Tip
+        </button>
+    </div>
+</div>
+
+<!-- Categories -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-search me-2"></i>Reconnaissance</h5>
+            </div>
+            <div class="card-body">
+                <div class="tip-item mb-3">
+                    <h6 class="text-primary">Subdomain Enumeration</h6>
+                    <p class="small">Use multiple tools and sources for comprehensive results:</p>
+                    <code class="d-block p-2 bg-dark rounded">subfinder -d target.com -all | httpx -silent</code>
+                </div>
+                <div class="tip-item mb-3">
+                    <h6 class="text-primary">Certificate Transparency</h6>
+                    <p class="small">Search certificate transparency logs:</p>
+                    <code class="d-block p-2 bg-dark rounded">curl -s "https://crt.sh/?q=%.target.com&output=json"</code>
+                </div>
+                <div class="tip-item">
+                    <h6 class="text-primary">DNS Bruteforcing</h6>
+                    <p class="small">Use custom wordlists for better results:</p>
+                    <code class="d-block p-2 bg-dark rounded">massdns -r resolvers.txt -w results.txt wordlist.txt</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bug me-2"></i>Vulnerability Testing</h5>
+            </div>
+            <div class="card-body">
+                <div class="tip-item mb-3">
+                    <h6 class="text-success">XSS Testing</h6>
+                    <p class="small">Test for XSS in all input fields and parameters:</p>
+                    <code class="d-block p-2 bg-dark rounded">&lt;script&gt;alert('XSS')&lt;/script&gt;</code>
+                </div>
+                <div class="tip-item mb-3">
+                    <h6 class="text-success">SQL Injection</h6>
+                    <p class="small">Start with basic payloads:</p>
+                    <code class="d-block p-2 bg-dark rounded">' OR '1'='1</code>
+                </div>
+                <div class="tip-item">
+                    <h6 class="text-success">SSRF Testing</h6>
+                    <p class="small">Test for Server-Side Request Forgery:</p>
+                    <code class="d-block p-2 bg-dark rounded">http://localhost:80/admin</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Best Practices</h5>
+            </div>
+            <div class="card-body">
+                <div class="tip-item mb-3">
+                    <h6 class="text-warning">Documentation</h6>
+                    <p class="small">Always document your findings with:</p>
+                    <ul class="small mb-2">
+                        <li>Steps to reproduce</li>
+                        <li>Impact assessment</li>
+                        <li>Screenshots/videos</li>
+                    </ul>
+                </div>
+                <div class="tip-item mb-3">
+                    <h6 class="text-warning">Scope Verification</h6>
+                    <p class="small">Always verify targets are in scope before testing</p>
+                </div>
+                <div class="tip-item">
+                    <h6 class="text-warning">Responsible Disclosure</h6>
+                    <p class="small">Follow responsible disclosure practices and program guidelines</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Tips -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Advanced Techniques</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-info">Automation Scripts</h6>
+                        <p class="small">Create bash scripts for repetitive tasks:</p>
+                        <pre class="bg-dark p-3 rounded"><code>#!/bin/bash
+for domain in $(cat domains.txt); do
+    nmap -sV -T4 $domain
+    nuclei -target $domain
+done</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-info">Custom Payloads</h6>
+                        <p class="small">Maintain a personal payload collection:</p>
+                        <pre class="bg-dark p-3 rounded"><code># XSS Payloads
+&lt;img src=x onerror=alert(1)&gt;
+&lt;svg onload=alert(1)&gt;
+javascript:alert(1)
+
+# SQL Injection
+' UNION SELECT null,version()--
+'; DROP TABLE users;--</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addTip() {
+    showComingSoon('Custom tip management');
+}
+</script>
+{% endblock %}

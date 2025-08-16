@@ -1,0 +1,45 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+</head>
+<body>
+  <h1>Bug Hunter Dashboard</h1>
+  <div class="stats-section">
+    <div>Total Bugs: {{ stats.total_bugs }}</div>
+    <div>Active Bugs: {{ stats.active_bugs }}</div>
+    <div>Resolved Bugs: {{ stats.resolved_bugs }}</div>
+    <div>Total Bounties: {{ stats.total_bounties }}</div>
+    <div>Monthly Earnings: {{ stats.monthly_earnings }}</div>
+    <div>Success Rate: {{ stats.success_rate }}%</div>
+    <!-- Add more stats as needed -->
+  </div>
+  <!-- Bounty Targets -->
+  <h2>Bounty Targets</h2>
+  <div id="bountyTargets"></div>
+  <!-- Recent Campaigns -->
+  <h2>Recent Recon Campaigns</h2>
+  <ul>
+    {% for c in recent_campaigns %}
+      <li>{{ c.target_domain }} - Status: {{ c.status }}</li>
+    {% endfor %}
+  </ul>
+  <!-- Navigation to other pages -->
+  <nav>
+    <a href="{{ url_for('bug_reports') }}">Bug Reports</a>
+    <a href="{{ url_for('security_checklist') }}">Security Checklist</a>
+    <a href="{{ url_for('tips_tricks') }}">Tips & Tricks</a>
+    <a href="{{ url_for('reading_list') }}">Reading List</a>
+    <a href="{{ url_for('news_feed') }}">News Feed</a>
+    <a href="{{ url_for('personal_notes') }}">Notes</a>
+    <a href="{{ url_for('targets') }}">Targets</a>
+    <a href="{{ url_for('recon') }}">Recon</a>
+    <a href="{{ url_for('attack') }}">Attack</a>
+    <a href="{{ url_for('exploit') }}">Exploit</a>
+  </nav>
+</body>
+</html>

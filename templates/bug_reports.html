@@ -1,0 +1,108 @@
+<!-- templates/bug_reports.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bug Reports</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+</head>
+<body>
+  <h1>Bug Reports</h1>
+  <button onclick="showAddBugModal()">Add New Bug Report</button>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Title</th><th>Status</th><th>Severity</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="bugTableBody"></tbody>
+  </table>
+
+  <!-- Edit/Create Modal -->
+  <div id="bugModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="hideBugModal()">&times;</span>
+      <h2 id="bugModalTitle">Add/Edit Bug Report</h2>
+      <form id="bugForm" onsubmit="saveBugReport(event)">
+        <input type="hidden" id="bugId" />
+        <label>Title:</label><input type="text" id="bugTitle" required />
+        <label>Description:</label><textarea id="bugDescription"></textarea>
+        <label>Severity:</label>
+        <select id="bugSeverity">
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <label>Status:</label>
+        <select id="bugStatus">
+          <option value="draft">$`Draft`</option>
+          <option value="submitted">Submitted</option>
+          <!-- other status options -->
+        </select>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+  <script>
+    async function loadBugs() {
+      const res = await fetch('/api/bugs');
+      const data = await res.json();
+      const tbody = document.getElementById('bugTableBody');
+      tbody.innerHTML = '';
+      data.data.forEach(bug => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${bug.id}</td>
+            <td>${bug.title}</td>
+            <td>${bug.status}</td>
+            <td>${bug.severity}</td>
+            <td>
+              <button onclick="editBug(${bug.id})">Edit</button>
+              <button onclick="deleteBug(${bug.id})">Delete</button>
+            </td>
+          </tr>`;
+      });
+    }
+    function showAddBugModal() {
+      document.getElementById('bugId').value = '';
+      document.getElementById('bugTitle').value = '';
+      document.getElementById('bugDescription').value = '';
+      document.getElementById('bugSeverity').value = 'medium';
+      document.getElementById('bugStatus').value = 'draft';
+      document.getElementById('bugModal').style.display = 'block';
+    }
+    function hideBugModal() {
+      document.getElementById('bugModal').style.display = 'none';
+    }
+    async function saveBugReport(e) {
+      e.preventDefault();
+      const id = document.getElementById('bugId').value;
+      const payload = {
+        title: document.getElementById('bugTitle').value,
+        description: document.getElementById('bugDescription').value,
+        severity: document.getElementById('bugSeverity').value,
+        status: document.getElementById('bugStatus').value,
+      };
+      const url = id ? `/api/bugs/${id}` : '/api/bugs';
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) { loadBugs(); hideBugModal(); }
+    }
+    async function deleteBug(id) {
+      if(confirm('Delete this bug report?')) {
+        await fetch(`/api/bugs/${id}`, { method: 'DELETE' });
+        loadBugs();
+      }
+    }
+    // Load bug reports on page load
+    loadBugs();
+  </script>
+</body>
+</html>

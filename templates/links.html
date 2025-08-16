@@ -1,0 +1,89 @@
+<!-- templates/links.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Useful Links</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+</head>
+<body>
+  <h1>Useful Links</h1>
+  <button onclick="showAddLinkModal()">Add New Link</button>
+  <table>
+    <thead>
+      <tr><th>Title</th><th>URL</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="linksTable"></tbody>
+  </table>
+
+  <!-- Add/Edit Link Modal -->
+  <div id="linkModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="hideLinkModal()">&times;</span>
+      <h2>Add/Edit Link</h2>
+      <form id="linkForm" onsubmit="saveLink(event)">
+        <input type="hidden" id="linkId" />
+        <label>Title:</label>
+        <input type="text" id="linkTitle" required />
+        <label>URL:</label>
+        <input type="url" id="linkURL" required />
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+  <script>
+    async function loadLinks() {
+      const res = await fetch('/api/links');
+      const data = await res.json();
+      const tbody = document.getElementById('linksTable');
+      tbody.innerHTML = '';
+      data.data.forEach(link => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${link.title}</td>
+            <td><a href="${link.url}" target="_blank">${link.url}</a></td>
+            <td>
+              <button onclick="editLink(${link.id})">Edit</button>
+              <button onclick="deleteLink(${link.id})">Delete</button>
+            </td>
+          </tr>`;
+      });
+    }
+    function showAddLinkModal() {
+      document.getElementById('linkId').value = '';
+      document.getElementById('linkTitle').value = '';
+      document.getElementById('linkURL').value = '';
+      document.getElementById('linkModal').style.display = 'block';
+    }
+    function hideLinkModal() {
+      document.getElementById('linkModal').style.display = 'none';
+    }
+    async function saveLink(e) {
+      e.preventDefault();
+      const id = document.getElementById('linkId').value;
+      const payload = {
+        title: document.getElementById('linkTitle').value,
+        url: document.getElementById('linkURL').value
+      };
+      const url = id ? `/api/links/${id}` : '/api/links';
+      const method = id ? 'PUT' : 'POST';
+      await fetch(url, {
+        method: method,
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      });
+      loadLinks(); hideLinkModal();
+    }
+    async function deleteLink(id) {
+      if(confirm('Delete this link?')){
+        await fetch(`/api/links/${id}`, { method: 'DELETE' });
+        loadLinks();
+      }
+    }
+    // Load on page load
+    loadLinks();
+  </script>
+</body>
+</html>

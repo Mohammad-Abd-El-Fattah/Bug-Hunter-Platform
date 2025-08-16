@@ -1,0 +1,58 @@
+<!-- templates/attack.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Attack Operations</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+</head>
+<body>
+  <h1>Attack Scripts & Operations</h1>
+
+  <!-- Upload Attack Script -->
+  <button onclick="showUploadAttackModal()">Upload Attack Script</button>
+  <div id="attack-logs"></div>
+
+  <!-- Attack Preview -->
+  <h2>Preview of Script to Run</h2>
+  <pre id="attack-preview" class="script-preview"></pre>
+  
+  <!-- Attack Form Modal -->
+  <div id="attackModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="hideAttackModal()">&times;</span>
+      <h2>Upload Attack Script (e.g., Bash)</h2>
+      <form id="attackForm" enctype="multipart/form-data" onsubmit="submitAttackScript(event)">
+        <input type="file" id="attackFile" accept=".sh, .bash" required />
+        <button type="submit">Upload & Preview</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+  <script>
+    function showUploadAttackModal() {
+      document.getElementById('attackModal').style.display = 'block';
+    }
+    function hideAttackModal() {
+      document.getElementById('attackModal').style.display = 'none';
+    }
+    async function submitAttackScript(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('attackFile');
+      const formData = new FormData();
+      formData.append('script', fileInput.files[0]);
+      const response = await fetch('/api/attack/upload', { method: 'POST', body: formData });
+      if (response.ok) {
+        const data = await response.json();
+        document.getElementById('attack-preview').textContent = data.script_content;
+        alert('Script uploaded! Ready to execute.');
+        hideAttackModal();
+      } else {
+        alert('Upload failed.');
+      }
+    }
+  </script>
+</body>
+</html>
