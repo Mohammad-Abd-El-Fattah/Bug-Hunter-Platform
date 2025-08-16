@@ -900,7 +900,64 @@ def api_link(link_id):
         conn.close()
         return jsonify({"status": "success"})
 
+###############################################################################
+# API Endpoints - Attack Scripts
+###############################################################################
 
+@app.route("/api/attack/scripts", methods=["GET"])
+def api_attack_scripts():
+    """Get all attack scripts."""
+    conn = db_connect()
+    scripts = conn.execute("SELECT id, name, filename, language, description, status, created_at FROM attack_scripts ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return jsonify({"data": [dict(s) for s in scripts]})
+
+@app.route('/api/attack/upload', methods=['POST'])
+def upload_attack_script():
+    """Upload a new attack script."""
+    if 'script_file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['script_file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    if file:
+        filename = file.filename
+        # For security, you might want to sanitize the filename
+        # filename = secure_filename(file.filename)
+        save_path = UPLOAD_DIR / "attack_scripts"
+        save_path.mkdir(exist_ok=True)
+        file_path = save_path / filename
+        file.save(file_path)
+
+        data = request.form
+        conn = db_connect()
+        conn.execute(
+            """INSERT INTO attack_scripts (name, filename, language, description, file_path) 
+               VALUES (?, ?, ?, ?, ?)""",
+            (data.get("name"), filename, data.get("language"), data.get("description"), str(file_path))
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "Script uploaded successfully."})
+    return jsonify({"error": "File upload failed"}), 500
+
+@app.route('/api/attack/scripts/<int:script_id>', methods=['DELETE'])
+def delete_attack_script(script_id):
+    """Delete an attack script."""
+    conn = db_connect()
+    # Optional: Delete the actual file from the server
+    script = conn.execute("SELECT file_path FROM attack_scripts WHERE id = ?", (script_id,)).fetchone()
+    if script and script['file_path'] and Path(script['file_path']).exists():
+        try:
+            Path(script['file_path']).unlink()
+        except OSError as e:
+            print(f"Error deleting file {script['file_path']}: {e}")
+
+    conn.execute("DELETE FROM attack_scripts WHERE id = ?", (script_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"})
 
 ###############################################################################
 # Error Handlers
