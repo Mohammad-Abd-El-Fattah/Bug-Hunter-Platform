@@ -1,45 +1,137 @@
-<!-- templates/dashboard.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
-</head>
-<body>
-  <h1>Bug Hunter Dashboard</h1>
-  <div class="stats-section">
-    <div>Total Bugs: {{ stats.total_bugs }}</div>
-    <div>Active Bugs: {{ stats.active_bugs }}</div>
-    <div>Resolved Bugs: {{ stats.resolved_bugs }}</div>
-    <div>Total Bounties: {{ stats.total_bounties }}</div>
-    <div>Monthly Earnings: {{ stats.monthly_earnings }}</div>
-    <div>Success Rate: {{ stats.success_rate }}%</div>
-    <!-- Add more stats as needed -->
-  </div>
-  <!-- Bounty Targets -->
-  <h2>Bounty Targets</h2>
-  <div id="bountyTargets"></div>
-  <!-- Recent Campaigns -->
-  <h2>Recent Recon Campaigns</h2>
-  <ul>
-    {% for c in recent_campaigns %}
-      <li>{{ c.target_domain }} - Status: {{ c.status }}</li>
-    {% endfor %}
-  </ul>
-  <!-- Navigation to other pages -->
-  <nav>
-    <a href="{{ url_for('bug_reports') }}">Bug Reports</a>
-    <a href="{{ url_for('security_checklist') }}">Security Checklist</a>
-    <a href="{{ url_for('tips_tricks') }}">Tips & Tricks</a>
-    <a href="{{ url_for('reading_list') }}">Reading List</a>
-    <a href="{{ url_for('news_feed') }}">News Feed</a>
-    <a href="{{ url_for('personal_notes') }}">Notes</a>
-    <a href="{{ url_for('targets') }}">Targets</a>
-    <a href="{{ url_for('recon') }}">Recon</a>
-    <a href="{{ url_for('attack') }}">Attack</a>
-    <a href="{{ url_for('exploit') }}">Exploit</a>
-  </nav>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Bug Hunter Enhanced{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 text-dark fw-bold">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </h1>
+                <p class="text-muted">Overview of your bug hunting activities</p>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+                <div class="form-check form-switch ms-3">
+                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                    <label class="form-check-label" for="autoRefresh">Auto-refresh</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-1">Total Bugs</h6>
+                        <h3 class="fw-bold mb-0" id="totalBugs">{{ stats.total_bugs or 0 }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-bug" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-1">Active Bugs</h6>
+                        <h3 class="fw-bold mb-0" id="activeBugs">{{ stats.active_bugs or 0 }}</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-1">Total Bounties</h6>
+                        <h3 class="fw-bold mb-0" id="totalBounties">${{ "%.2f"|format(stats.total_bounties or 0) }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-cash-stack" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-1">Success Rate</h6>
+                        <h3 class="fw-bold mb-0" id="successRate">{{ stats.success_rate or 0 }}%</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-trophy" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Platform Distribution</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="platformChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Vulnerability Types</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="vulnerabilityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Recent Recon Campaigns</h6>
+            </div>
+            <div class="card-body" id="recentCampaigns">
+                </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Recent Bug Reports</h6>
+            </div>
+            <div class="card-body" id="recentBugReports">
+                </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
