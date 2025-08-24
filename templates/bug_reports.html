@@ -7,7 +7,7 @@
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 text-dark fw-bold">
+                <h1 class="h3 fw-bold">
                     <i class="bi bi-bug me-2"></i>My Bug Reports
                 </h1>
                 <p class="text-muted">Track and manage all your submitted bug reports</p>
@@ -22,7 +22,7 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-dark table-hover">
                 <thead>
                     <tr>
                         <th>Title</th>
@@ -45,7 +45,7 @@
                         <td>{{ bug.created_at.split(' ')[0] if bug.created_at else 'N/A' }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" onclick="openBugModal({{ bug.id }})">
+                                <button class="btn btn-outline-light" onclick="openBugModal({{ bug.id }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-outline-danger" onclick="deleteBug({{ bug.id }})">
@@ -74,7 +74,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="bugModalTitle">New Bug Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="bugForm">
                 <div class="modal-body">

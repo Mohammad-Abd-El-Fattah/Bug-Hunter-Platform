@@ -466,25 +466,17 @@ def api_dashboard_stats():
 @app.route("/api/notes", methods=["GET", "POST"])
 def api_notes():
     """Notes collection endpoint."""
+    conn = db_connect()
     if request.method == "GET":
-        conn = db_connect()
         notes = conn.execute("SELECT * FROM personal_notes ORDER BY is_pinned DESC, created_at DESC").fetchall()
         conn.close()
-        data = []
-        for note in notes:
-            note_dict = dict(note)
-            note_dict["tags"] = json.loads(note_dict["tags"] or "[]")
-            note_dict["is_pinned"] = bool(note_dict["is_pinned"])
-            data.append(note_dict)
-        return jsonify({"data": data})
+        return jsonify({"data": [dict(note) for note in notes]})
     
     # POST - Create new note
     data = request.get_json()
-    conn = db_connect()
     conn.execute(
-        "INSERT INTO personal_notes (title, content, category, tags, is_pinned) VALUES (?, ?, ?, ?, ?)",
-        (data.get("title"), data.get("content"), data.get("category", "general"), 
-         json.dumps(data.get("tags", [])), 1 if data.get("is_pinned") else 0)
+        "INSERT INTO personal_notes (title, content, category) VALUES (?, ?, ?)",
+        (data.get("title"), data.get("content"), data.get("category", "general"))
     )
     conn.commit()
     conn.close()
@@ -500,17 +492,13 @@ def api_note(note_id):
         conn.close()
         if not note:
             abort(404)
-        note_dict = dict(note)
-        note_dict["tags"] = json.loads(note_dict["tags"] or "[]")
-        note_dict["is_pinned"] = bool(note_dict["is_pinned"])
-        return jsonify({"data": note_dict})
+        return jsonify({"data": dict(note)})
     
     elif request.method == "PUT":
         data = request.get_json()
         conn.execute(
-            "UPDATE personal_notes SET title=?, content=?, category=?, tags=?, is_pinned=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-            (data.get("title"), data.get("content"), data.get("category", "general"),
-             json.dumps(data.get("tags", [])), 1 if data.get("is_pinned") else 0, note_id)
+            "UPDATE personal_notes SET title=?, content=?, category=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (data.get("title"), data.get("content"), data.get("category", "general"), note_id)
         )
         conn.commit()
         conn.close()
@@ -522,15 +510,6 @@ def api_note(note_id):
         conn.close()
         return jsonify({"status": "success"})
 
-@app.route("/api/notes/<int:note_id>/toggle-pin", methods=["PATCH"])
-def api_toggle_pin(note_id):
-    """Toggle pin status of a note."""
-    conn = db_connect()
-    conn.execute("UPDATE personal_notes SET is_pinned = CASE WHEN is_pinned = 1 THEN 0 ELSE 1 END WHERE id = ?", (note_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success"})
-
 ###############################################################################
 # API Endpoints - Bug Reports
 ###############################################################################
@@ -538,24 +517,20 @@ def api_toggle_pin(note_id):
 @app.route("/api/bugs", methods=["GET", "POST"])
 def api_bugs():
     """Bug reports collection endpoint."""
+    conn = db_connect()
     if request.method == "GET":
-        conn = db_connect()
         bugs = conn.execute("SELECT * FROM bug_reports ORDER BY created_at DESC").fetchall()
         conn.close()
         return jsonify({"data": [dict(bug) for bug in bugs]})
     
     # POST - Create new bug report
     data = request.get_json()
-    conn = db_connect()
     conn.execute("""
-        INSERT INTO bug_reports (title, description, severity, status, vulnerability_type, target_url, 
-                                platform, program_name, bounty_amount, poc_steps, impact_description, remediation_suggestion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO bug_reports (title, description, severity, status)
+        VALUES (?, ?, ?, ?)
     """, (
         data.get("title"), data.get("description"), data.get("severity", "medium"),
-        data.get("status", "draft"), data.get("vulnerability_type"), data.get("target_url"),
-        data.get("platform"), data.get("program_name"), data.get("bounty_amount", 0),
-        data.get("poc_steps"), data.get("impact_description"), data.get("remediation_suggestion")
+        data.get("status", "draft")
     ))
     conn.commit()
     conn.close()
@@ -576,15 +551,10 @@ def api_bug(bug_id):
     elif request.method == "PUT":
         data = request.get_json()
         conn.execute("""
-            UPDATE bug_reports SET title=?, description=?, severity=?, status=?, vulnerability_type=?, 
-                                  target_url=?, platform=?, program_name=?, bounty_amount=?, poc_steps=?, 
-                                  impact_description=?, remediation_suggestion=?, updated_at=CURRENT_TIMESTAMP
+            UPDATE bug_reports SET title=?, description=?, severity=?, status=?, updated_at=CURRENT_TIMESTAMP
             WHERE id=?
         """, (
-            data.get("title"), data.get("description"), data.get("severity"), data.get("status"),
-            data.get("vulnerability_type"), data.get("target_url"), data.get("platform"),
-            data.get("program_name"), data.get("bounty_amount"), data.get("poc_steps"),
-            data.get("impact_description"), data.get("remediation_suggestion"), bug_id
+            data.get("title"), data.get("description"), data.get("severity"), data.get("status"), bug_id
         ))
         conn.commit()
         conn.close()
@@ -603,15 +573,14 @@ def api_bug(bug_id):
 @app.route("/api/platforms", methods=["GET", "POST"])
 def api_platforms():
     """Platforms collection endpoint."""
+    conn = db_connect()
     if request.method == "GET":
-        conn = db_connect()
         platforms = conn.execute("SELECT * FROM platforms ORDER BY created_at DESC").fetchall()
         conn.close()
         return jsonify({"data": [dict(platform) for platform in platforms]})
     
     # POST - Create new platform
     data = request.get_json()
-    conn = db_connect()
     conn.execute(
         "INSERT INTO platforms (name, url, platform_type, api_key, is_active, description) VALUES (?, ?, ?, ?, ?, ?)",
         (data.get("name"), data.get("url"), data.get("platform_type", "public"), 
@@ -651,89 +620,39 @@ def api_platform(platform_id):
         return jsonify({"status": "success"})
 
 ###############################################################################
-# API Endpoints - Recon Campaigns
+# API Endpoints - Tips & Tricks
 ###############################################################################
 
-@app.route("/api/recon/campaigns", methods=["GET"])
-def api_recon_campaigns():
-    """Get recon campaigns."""
-    conn = db_connect()
-    campaigns = conn.execute("SELECT * FROM recon_campaigns ORDER BY created_at DESC").fetchall()
-    conn.close()
-    return jsonify({"data": [dict(campaign) for campaign in campaigns]})
-
-@app.route("/api/recon/start", methods=["POST"])
-def api_start_recon():
-    """Start a new recon campaign."""
+@app.route("/api/tips", methods=["POST"])
+def api_add_tip():
+    """Add a new tip."""
     data = request.get_json()
     conn = db_connect()
     conn.execute(
-        "INSERT INTO recon_campaigns (target_domain, status, scope_size, script_name) VALUES (?, ?, ?, ?)",
-        (data.get("target_domain"), "running", data.get("scope_size", "medium"), data.get("script_name", "default"))
-    )
-    conn.commit()
-    campaign_id = conn.lastrowid
-    conn.close()
-    return jsonify({"status": "success", "campaign_id": campaign_id})
-
-@app.route("/api/campaigns/<int:campaign_id>", methods=["GET", "DELETE"])
-def api_campaign(campaign_id):
-    """Single campaign endpoint."""
-    conn = db_connect()
-    
-    if request.method == "GET":
-        campaign = conn.execute("SELECT * FROM recon_campaigns WHERE id = ?", (campaign_id,)).fetchone()
-        conn.close()
-        if not campaign:
-            abort(404)
-        return jsonify({"data": dict(campaign)})
-    
-    elif request.method == "DELETE":
-        conn.execute("DELETE FROM recon_campaigns WHERE id = ?", (campaign_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-
-@app.route("/api/campaigns/<int:campaign_id>/stop", methods=["PATCH"])
-def api_stop_campaign(campaign_id):
-    """Stop a running campaign."""
-    conn = db_connect()
-    conn.execute(
-        "UPDATE recon_campaigns SET status='stopped', is_stopped=1, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-        (campaign_id,)
+        "INSERT INTO tips_tricks (title, content) VALUES (?, ?)",
+        (data.get("title"), data.get("content"))
     )
     conn.commit()
     conn.close()
-    return jsonify({"status": "success"})
-    
-    
-@app.route("/targets")
-def targets():
-    """Bounty/Testing targets page."""
-    conn = db_connect()
-    # استخدم جدول bounty_targets أو targets حسب مشروعك
-    targets = conn.execute("SELECT * FROM bounty_targets ORDER BY created_at DESC").fetchall()
-    conn.close()
-    return render_template("targets.html", targets=[dict(t) for t in targets])
-
+    return jsonify({"status": "success"}), 201
 
 ###############################################################################
 # API Endpoints - News
 ###############################################################################
 
-@app.route("/api/news", methods=["GET"])
-def api_news():
-    """Get news articles."""
-    articles = fetch_rss_news()
-    return jsonify({"articles": articles})
+@app.route("/api/news/add", methods=["POST"])
+def api_add_news():
+    """Add a new news article."""
+    data = request.get_json()
+    conn = db_connect()
+    conn.execute(
+        "INSERT INTO news_articles (title, url, source, category) VALUES (?, ?, ?, ?)",
+        (data.get("title"), data.get("url"), data.get("source"), data.get("category"))
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"}), 201
 
-@app.route("/api/news/refresh", methods=["POST"])
-def api_refresh_news():
-    """Refresh news feed."""
-    articles = fetch_rss_news()
-    return jsonify({"status": "success", "count": len(articles)})
-    
-    
 ###############################################################################
 # API Endpoints - Checklists
 ###############################################################################
@@ -750,58 +669,8 @@ def api_checklists():
     # POST - Create new checklist
     data = request.get_json()
     conn.execute(
-        "INSERT INTO security_checklists (name, type, description, items, is_template) VALUES (?, ?, ?, ?, ?)",
-        (data.get("name"), data.get("type", "web"), data.get("description"), 
-         data.get("items"), 1 if data.get("is_template") else 0)
-    )
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success"}), 201
-
-@app.route("/api/checklists/<int:checklist_id>", methods=["GET", "PUT", "DELETE"])
-def api_checklist(checklist_id):
-    """Single checklist endpoint."""
-    conn = db_connect()
-    
-    if request.method == "GET":
-        checklist = conn.execute("SELECT * FROM security_checklists WHERE id = ?", (checklist_id,)).fetchone()
-        conn.close()
-        if not checklist:
-            abort(404)
-        return jsonify({"data": dict(checklist)})
-    
-    elif request.method == "PUT":
-        data = request.get_json()
-        conn.execute(
-            "UPDATE security_checklists SET name=?, type=?, description=?, items=?, is_template=? WHERE id=?",
-            (data.get("name"), data.get("type"), data.get("description"), 
-             data.get("items"), 1 if data.get("is_template") else 0, checklist_id)
-        )
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-    
-    elif request.method == "DELETE":
-        conn.execute("DELETE FROM security_checklists WHERE id = ?", (checklist_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-
-@app.route("/api/checklists/import", methods=["POST"])
-def api_import_checklist():
-    """Import checklist from GitHub URL."""
-    # This is a placeholder for the actual import logic
-    data = request.get_json()
-    github_url = data.get("github_url")
-    if not github_url:
-        return jsonify({"error": "GitHub URL is required"}), 400
-    
-    # In a real implementation, you would fetch and parse the content from the URL.
-    # For now, we just save the URL.
-    conn = db_connect()
-    conn.execute(
-        "INSERT INTO security_checklists (name, source_url, type, items) VALUES (?, ?, ?, ?)",
-        ("Imported from GitHub", github_url, "web", f"Checklist items from {github_url}")
+        "INSERT INTO security_checklists (name, description) VALUES (?, ?)",
+        (data.get("name"), data.get("description"))
     )
     conn.commit()
     conn.close()
@@ -810,7 +679,6 @@ def api_import_checklist():
 ###############################################################################
 # API Endpoints - Reading List
 ###############################################################################
-
 
 @app.route("/api/reading", methods=["GET", "POST"])
 def api_reading_list():
@@ -824,140 +692,24 @@ def api_reading_list():
     # POST - Create new reading list item
     data = request.get_json()
     conn.execute(
-        "INSERT INTO reading_list (title, url, description, category) VALUES (?, ?, ?, ?)",
-        (data.get("title"), data.get("url"), data.get("description"), data.get("category", "article"))
+        "INSERT INTO reading_list (title, url) VALUES (?, ?)",
+        (data.get("title"), data.get("url"))
     )
     conn.commit()
     conn.close()
     return jsonify({"status": "success"}), 201
-
-@app.route("/api/reading/<int:item_id>", methods=["PUT", "DELETE"])
-def api_reading_item(item_id):
-    """Single reading list item endpoint."""
-    conn = db_connect()
-    if request.method == "PUT":
-        data = request.get_json()
-        conn.execute(
-            "UPDATE reading_list SET title=?, url=?, description=?, category=?, is_read=? WHERE id=?",
-            (data.get("title"), data.get("url"), data.get("description"), 
-             data.get("category"), 1 if data.get("is_read") else 0, item_id)
-        )
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-
-    elif request.method == "DELETE":
-        conn.execute("DELETE FROM reading_list WHERE id = ?", (item_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-
-###############################################################################
-# API Endpoints - Useful Links
-###############################################################################
-
-@app.route("/api/links", methods=["GET", "POST"])
-def api_links():
-    """Useful links collection endpoint."""
-    conn = db_connect()
-    if request.method == "GET":
-        links = conn.execute("SELECT * FROM useful_links ORDER BY created_at DESC").fetchall()
-        conn.close()
-        return jsonify({"data": [dict(link) for link in links]})
-
-    # POST - Create new link
-    data = request.get_json()
-    conn.execute(
-        "INSERT INTO useful_links (title, url, description, category) VALUES (?, ?, ?, ?)",
-        (data.get("title"), data.get("url"), data.get("description"), data.get("category", "tools"))
-    )
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success"}), 201
-
-@app.route("/api/links/<int:link_id>", methods=["GET", "PUT", "DELETE"])
-def api_link(link_id):
-    """Single useful link endpoint."""
-    conn = db_connect()
-    if request.method == "GET":
-        link = conn.execute("SELECT * FROM useful_links WHERE id = ?", (link_id,)).fetchone()
-        conn.close()
-        return jsonify({"data": dict(link)})
-        
-    elif request.method == "PUT":
-        data = request.get_json()
-        conn.execute(
-            "UPDATE useful_links SET title=?, url=?, description=?, category=? WHERE id=?",
-            (data.get("title"), data.get("url"), data.get("description"), data.get("category"), link_id)
-        )
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-
-    elif request.method == "DELETE":
-        conn.execute("DELETE FROM useful_links WHERE id = ?", (link_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-
-###############################################################################
-# API Endpoints - Attack Scripts
-###############################################################################
-
-@app.route("/api/attack/scripts", methods=["GET"])
-def api_attack_scripts():
-    """Get all attack scripts."""
-    conn = db_connect()
-    scripts = conn.execute("SELECT id, name, filename, language, description, status, created_at FROM attack_scripts ORDER BY created_at DESC").fetchall()
-    conn.close()
-    return jsonify({"data": [dict(s) for s in scripts]})
-
-@app.route('/api/attack/upload', methods=['POST'])
-def upload_attack_script():
-    """Upload a new attack script."""
-    if 'script_file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['script_file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
     
-    if file:
-        filename = file.filename
-        # For security, you might want to sanitize the filename
-        # filename = secure_filename(file.filename)
-        save_path = UPLOAD_DIR / "attack_scripts"
-        save_path.mkdir(exist_ok=True)
-        file_path = save_path / filename
-        file.save(file_path)
+###############################################################################
+# API Endpoints - Recon Campaigns
+###############################################################################
 
-        data = request.form
-        conn = db_connect()
-        conn.execute(
-            """INSERT INTO attack_scripts (name, filename, language, description, file_path) 
-               VALUES (?, ?, ?, ?, ?)""",
-            (data.get("name"), filename, data.get("language"), data.get("description"), str(file_path))
-        )
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success", "message": "Script uploaded successfully."})
-    return jsonify({"error": "File upload failed"}), 500
-
-@app.route('/api/attack/scripts/<int:script_id>', methods=['DELETE'])
-def delete_attack_script(script_id):
-    """Delete an attack script."""
+@app.route("/api/recon/campaigns", methods=["GET"])
+def api_recon_campaigns():
+    """Get recon campaigns."""
     conn = db_connect()
-    # Optional: Delete the actual file from the server
-    script = conn.execute("SELECT file_path FROM attack_scripts WHERE id = ?", (script_id,)).fetchone()
-    if script and script['file_path'] and Path(script['file_path']).exists():
-        try:
-            Path(script['file_path']).unlink()
-        except OSError as e:
-            print(f"Error deleting file {script['file_path']}: {e}")
-
-    conn.execute("DELETE FROM attack_scripts WHERE id = ?", (script_id,))
-    conn.commit()
+    campaigns = conn.execute("SELECT * FROM recon_campaigns ORDER BY created_at DESC").fetchall()
     conn.close()
-    return jsonify({"status": "success"})
+    return jsonify({"data": [dict(campaign) for campaign in campaigns]})
 
 ###############################################################################
 # Error Handlers

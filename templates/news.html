@@ -7,10 +7,8 @@
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 text-dark fw-bold">
-                    <i class="bi bi-newspaper me-2"></i>Security News Feed
-                </h1>
-                <p class="text-muted">Latest security news and bug bounty activity from HackerOne and other sources</p>
+                <h1 class="h3 fw-bold"><i class="bi bi-newspaper me-2"></i>Security News Feed</h1>
+                <p class="text-muted">Latest security news and bug bounty activity.</p>
             </div>
             <button class="btn btn-gradient" onclick="refreshNews()">
                 <i class="bi bi-arrow-clockwise me-2"></i>Refresh News
@@ -19,54 +17,15 @@
     </div>
 </div>
 
-<!-- Filter Bar -->
 <div class="row mb-4">
     <div class="col">
         <div class="card">
             <div class="card-body">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label for="categoryFilter" class="form-label">Category</label>
-                        <select class="form-select" id="categoryFilter">
-                            <option value="">All Categories</option>
-                            <option value="hacktivity">HackerOne Activity</option>
-                            <option value="vulnerabilities">Vulnerabilities</option>
-                            <option value="programs">Bug Bounty Programs</option>
-                            <option value="research">Security Research</option>
-                            <option value="tools">Tools & Techniques</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="sourceFilter" class="form-label">Source</label>
-                        <select class="form-select" id="sourceFilter">
-                            <option value="">All Sources</option>
-                            <option value="HackerOne Hacktivity">HackerOne</option>
-                            <option value="Security News">Security News</option>
-                            <option value="Bug Bounty News">Bug Bounty News</option>
-                            <option value="Vulnerability Research">Research</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="statusFilter" class="form-label">Status</label>
-                        <select class="form-select" id="statusFilter">
-                            <option value="">All Articles</option>
-                            <option value="unread">Unread Only</option>
-                            <option value="read">Read Only</option>
-                            <option value="favorites">Favorites</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                            <i class="bi bi-x-circle me-1"></i>Clear
-                        </button>
-                    </div>
                 </div>
-            </div>
         </div>
     </div>
 </div>
 
-<!-- News Articles -->
 <div class="row" id="newsContainer">
     {% for article in articles %}
     <div class="col-12 news-article" data-category="{{ article.category }}" data-source="{{ article.source }}" data-read="{{ article.is_read|lower }}">
@@ -74,71 +33,16 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-8">
-                        <div class="d-flex align-items-start mb-2">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">
-                                    <a href="{{ article.url }}" target="_blank" class="text-decoration-none">
-                                        {{ article.title }}
-                                    </a>
-                                    {% if not article.is_read %}
-                                    <span class="badge bg-primary ms-2">New</span>
-                                    {% endif %}
-                                </h5>
-                                <p class="card-text text-muted">
-                                    {{ article.content[:200] }}{% if article.content|length > 200 %}...{% endif %}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex align-items-center gap-3">
-                            <small class="text-muted">
-                                <i class="bi bi-calendar3 me-1"></i>
-                                {{ article.published_date.split(' ')[0] if article.published_date else 'Unknown' }}
-                            </small>
-                            <small class="text-muted">
-                                <i class="bi bi-building me-1"></i>
-                                {{ article.source }}
-                            </small>
-                            <span class="badge bg-{{ 'success' if article.category == 'hacktivity' else 'secondary' }}">
-                                {{ article.category|title }}
-                            </span>
-                        </div>
+                         <h5 class="card-title">
+                            <a href="{{ article.url }}" target="_blank" class="text-decoration-none">{{ article.title }}</a>
+                        </h5>
+                        <p class="card-text text-muted">{{ article.content[:200] }}...</p>
                     </div>
-                    
-                    <div class="col-md-4">
-                        <div class="d-flex flex-column h-100 justify-content-between">
-                            <div class="btn-group mb-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="markAsRead({{ loop.index0 }})" title="Mark as Read">
-                                    <i class="bi bi-check2"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" onclick="toggleFavorite({{ loop.index0 }})" title="Add to Favorites">
-                                    <i class="bi bi-star{{ '-fill' if article.is_favorite else '' }}"></i>
-                                </button>
-                                <a href="{{ article.url }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Open Article">
-                                    <i class="bi bi-box-arrow-up-right"></i>
-                                </a>
-                            </div>
-                            
-                            <!-- Article Thumbnail/Icon -->
-                            <div class="text-center">
-                                {% if article.category == 'hacktivity' %}
-                                <div class="bg-success bg-opacity-10 rounded p-3">
-                                    <i class="bi bi-shield-check text-success" style="font-size: 2rem;"></i>
-                                </div>
-                                {% elif article.category == 'vulnerabilities' %}
-                                <div class="bg-danger bg-opacity-10 rounded p-3">
-                                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
-                                </div>
-                                {% elif article.category == 'programs' %}
-                                <div class="bg-primary bg-opacity-10 rounded p-3">
-                                    <i class="bi bi-currency-dollar text-primary" style="font-size: 2rem;"></i>
-                                </div>
-                                {% else %}
-                                <div class="bg-info bg-opacity-10 rounded p-3">
-                                    <i class="bi bi-newspaper text-info" style="font-size: 2rem;"></i>
-                                </div>
-                                {% endif %}
-                            </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-light" onclick="markAsRead({{ loop.index0 }})"><i class="bi bi-check2"></i></button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="toggleFavorite({{ loop.index0 }})"><i class="bi bi-star"></i></button>
+                            <a href="{{ article.url }}" target="_blank" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-up-right"></i></a>
                         </div>
                     </div>
                 </div>
@@ -146,302 +50,11 @@
         </div>
     </div>
     {% else %}
-    <div class="col-12">
-        <div class="text-center py-5">
-            <i class="bi bi-newspaper text-muted" style="font-size: 4rem;"></i>
-            <h4 class="text-muted mt-3">No news articles available</h4>
-            <p class="text-muted">Refresh to fetch the latest security news and bug bounty activity</p>
-            <button class="btn btn-gradient" onclick="refreshNews()">
-                <i class="bi bi-arrow-clockwise me-2"></i>Refresh News
-            </button>
-        </div>
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-newspaper text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mt-3">No news articles available</h4>
+        <p class="text-muted">Refresh to fetch the latest security news.</p>
     </div>
     {% endfor %}
 </div>
-
-<!-- Load More Button -->
-{% if articles|length >= 20 %}
-<div class="row mt-4">
-    <div class="col text-center">
-        <button class="btn btn-outline-primary" onclick="loadMoreNews()">
-            <i class="bi bi-plus-circle me-2"></i>Load More Articles
-        </button>
-    </div>
-</div>
-{% endif %}
-
-<!-- Article Details Modal -->
-<div class="modal fade" id="articleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="articleModalTitle">Article Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="articleModalContent">
-                    <!-- Article content will be loaded here -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="openOriginalBtn">
-                    <i class="bi bi-box-arrow-up-right me-2"></i>Open Original
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- RSS Feed Management Modal -->
-<div class="modal fade" id="feedModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-rss me-2"></i>Manage RSS Feeds
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="feedName" class="form-label">Feed Name</label>
-                    <input type="text" class="form-control" id="feedName" placeholder="Security Blog">
-                </div>
-                <div class="mb-3">
-                    <label for="feedUrl" class="form-label">RSS Feed URL</label>
-                    <input type="url" class="form-control" id="feedUrl" placeholder="https://example.com/rss">
-                </div>
-                <div class="mb-3">
-                    <label for="feedCategory" class="form-label">Category</label>
-                    <select class="form-select" id="feedCategory">
-                        <option value="security">Security</option>
-                        <option value="research">Research</option>
-                        <option value="tools">Tools</option>
-                        <option value="news">News</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-gradient">
-                    <i class="bi bi-plus-lg me-2"></i>Add Feed
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-let articles = {{ articles|tojson if articles else '[]' }};
-let currentPage = 1;
-
-// Refresh news feed
-async function refreshNews() {
-    const refreshBtn = document.querySelector('button[onclick="refreshNews()"]');
-    const originalHtml = refreshBtn.innerHTML;
-    
-    refreshBtn.innerHTML = '<div class="spinner me-2"></div>Refreshing...';
-    refreshBtn.disabled = true;
-    
-    try {
-        await API.refreshNews();
-        API.showToast('News refreshed successfully!', 'success');
-        
-        // Reload page to show new articles
-        setTimeout(() => location.reload(), 1000);
-        
-    } catch (error) {
-        API.showToast(error.message || 'Error refreshing news', 'error');
-        
-        refreshBtn.innerHTML = originalHtml;
-        refreshBtn.disabled = false;
-    }
-}
-
-// Mark article as read
-async function markAsRead(articleIndex) {
-    const newsCards = document.querySelectorAll('.news-article');
-    const card = newsCards[articleIndex];
-    
-    if (!card) return;
-    
-    try {
-        // For now, just update the UI (you can add API call later)
-        const newBadge = card.querySelector('.badge.bg-primary');
-        if (newBadge) {
-            newBadge.remove();
-        }
-        
-        const readBtn = card.querySelector('button[onclick*="markAsRead"]');
-        if (readBtn) {
-            readBtn.classList.replace('btn-outline-primary', 'btn-success');
-            readBtn.querySelector('i').className = 'bi bi-check2-circle';
-            readBtn.title = 'Marked as Read';
-        }
-        
-        card.dataset.read = 'true';
-        
-        API.showToast('Article marked as read', 'success');
-        
-    } catch (error) {
-        API.showToast('Error marking article as read', 'error');
-    }
-}
-
-// Toggle favorite status
-async function toggleFavorite(articleIndex) {
-    const newsCards = document.querySelectorAll('.news-article');
-    const card = newsCards[articleIndex];
-    
-    if (!card) return;
-    
-    try {
-        const favoriteBtn = card.querySelector('button[onclick*="toggleFavorite"]');
-        const icon = favoriteBtn.querySelector('i');
-        
-        if (icon.classList.contains('bi-star')) {
-            // Add to favorites
-            icon.className = 'bi bi-star-fill';
-            favoriteBtn.classList.replace('btn-outline-warning', 'btn-warning');
-            favoriteBtn.title = 'Remove from Favorites';
-            API.showToast('Article added to favorites', 'success');
-        } else {
-            // Remove from favorites
-            icon.className = 'bi bi-star';
-            favoriteBtn.classList.replace('btn-warning', 'btn-outline-warning');
-            favoriteBtn.title = 'Add to Favorites';
-            API.showToast('Article removed from favorites', 'info');
-        }
-        
-    } catch (error) {
-        API.showToast('Error updating favorite status', 'error');
-    }
-}
-
-// Filter articles
-function filterArticles() {
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const sourceFilter = document.getElementById('sourceFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-    
-    const newsCards = document.querySelectorAll('.news-article');
-    
-    newsCards.forEach(card => {
-        const category = card.dataset.category;
-        const source = card.querySelector('.text-muted .bi-building').parentElement.textContent.trim();
-        const isRead = card.dataset.read === 'true';
-        const isFavorite = card.querySelector('.bi-star-fill') !== null;
-        
-        let show = true;
-        
-        if (categoryFilter && category !== categoryFilter) show = false;
-        if (sourceFilter && !source.includes(sourceFilter)) show = false;
-        if (statusFilter === 'unread' && isRead) show = false;
-        if (statusFilter === 'read' && !isRead) show = false;
-        if (statusFilter === 'favorites' && !isFavorite) show = false;
-        
-        card.style.display = show ? 'block' : 'none';
-    });
-    
-    // Update visible count
-    const visibleCount = document.querySelectorAll('.news-article[style="display: block"], .news-article:not([style])').length;
-    const totalCount = newsCards.length;
-    
-    // You can add a status indicator here if needed
-    console.log(`Showing ${visibleCount} of ${totalCount} articles`);
-}
-
-// Clear all filters
-function clearFilters() {
-    document.getElementById('categoryFilter').value = '';
-    document.getElementById('sourceFilter').value = '';
-    document.getElementById('statusFilter').value = '';
-    
-    const newsCards = document.querySelectorAll('.news-article');
-    newsCards.forEach(card => {
-        card.style.display = 'block';
-    });
-}
-
-// Load more articles
-async function loadMoreNews() {
-    try {
-        currentPage++;
-        const response = await API.request(`/api/news?page=${currentPage}`);
-        
-        if (response.articles && response.articles.length > 0) {
-            // Here you would append new articles to the DOM
-            // For now, we'll just show a message
-            API.showToast(`Loaded ${response.articles.length} more articles`, 'success');
-        } else {
-            API.showToast('No more articles available', 'info');
-        }
-        
-    } catch (error) {
-        API.showToast('Error loading more articles', 'error');
-    }
-}
-
-// Setup event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Filter event listeners
-    document.getElementById('categoryFilter').addEventListener('change', filterArticles);
-    document.getElementById('sourceFilter').addEventListener('change', filterArticles);
-    document.getElementById('statusFilter').addEventListener('change', filterArticles);
-    
-    // Auto-refresh news every 10 minutes
-    setInterval(() => {
-        if (!document.hidden) {
-            refreshNews();
-        }
-    }, 600000);
-    
-    // Handle external link clicks
-    document.querySelectorAll('a[target="_blank"]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            // Find the parent article and mark as read
-            const article = e.target.closest('.news-article');
-            if (article) {
-                const index = Array.from(document.querySelectorAll('.news-article')).indexOf(article);
-                if (index >= 0) {
-                    markAsRead(index);
-                }
-            }
-        });
-    });
-});
-
-// Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey) {
-        switch(e.key) {
-            case 'r':
-                e.preventDefault();
-                refreshNews();
-                break;
-            case 'f':
-                e.preventDefault();
-                document.getElementById('categoryFilter').focus();
-                break;
-        }
-    }
-});
-
-// Search functionality (if you want to add it later)
-function searchArticles(query) {
-    const newsCards = document.querySelectorAll('.news-article');
-    
-    newsCards.forEach(card => {
-        const title = card.querySelector('.card-title a').textContent.toLowerCase();
-        const content = card.querySelector('.card-text').textContent.toLowerCase();
-        const searchTerm = query.toLowerCase();
-        
-        const matches = title.includes(searchTerm) || content.includes(searchTerm);
-        card.style.display = matches ? 'block' : 'none';
-    });
-}
-</script>
 {% endblock %}

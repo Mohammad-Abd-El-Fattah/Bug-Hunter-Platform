@@ -1,16 +1,12 @@
 {% extends "base.html" %}
-
 {% block title %}Bug Bounty Platforms - Bug Hunter Enhanced{% endblock %}
-
 {% block content %}
 <div class="row mb-4">
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 text-dark fw-bold">
-                    <i class="bi bi-building me-2"></i>Bug Bounty Platforms
-                </h1>
-                <p class="text-muted">Manage your bug bounty platforms and programs</p>
+                <h1 class="h3 fw-bold"><i class="bi bi-building me-2"></i>Bug Bounty Platforms</h1>
+                <p class="text-muted">Manage your bug bounty platforms and programs.</p>
             </div>
             <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#platformModal" onclick="openPlatformModal()">
                 <i class="bi bi-plus-lg me-2"></i>Add Platform
@@ -18,345 +14,61 @@
         </div>
     </div>
 </div>
-
-<!-- Quick Stats -->
-<div class="row g-4 mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted text-uppercase fw-bold mb-1">Total Platforms</h6>
-                        <h3 class="fw-bold mb-0">{{ platforms|length }}</h3>
-                    </div>
-                    <div class="text-primary">
-                        <i class="bi bi-building" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted text-uppercase fw-bold mb-1">Active Programs</h6>
-                        <h3 class="fw-bold mb-0">{{ platforms|selectattr('is_active')|list|length }}</h3>
-                    </div>
-                    <div class="text-success">
-                        <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted text-uppercase fw-bold mb-1">Private Programs</h6>
-                        <h3 class="fw-bold mb-0">{{ platforms|selectattr('platform_type', 'equalto', 'private')|list|length }}</h3>
-                    </div>
-                    <div class="text-warning">
-                        <i class="bi bi-lock" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted text-uppercase fw-bold mb-1">API Configured</h6>
-                        <h3 class="fw-bold mb-0">{{ platforms|selectattr('api_key')|list|length }}</h3>
-                    </div>
-                    <div class="text-info">
-                        <i class="bi bi-key" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Platforms Grid -->
 <div class="row g-4" id="platformsGrid">
     {% for platform in platforms %}
     <div class="col-lg-4 col-md-6" data-platform-id="{{ platform.id }}">
         <div class="card h-100">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div class="d-flex align-items-center">
-                        <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
-                            <i class="bi bi-building text-primary"></i>
-                        </div>
-                        <div>
-                            <h5 class="card-title mb-1">{{ platform.name }}</h5>
-                            <small class="text-muted">{{ platform.platform_type|default('Public')|title }}</small>
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
-                            <i class="bi bi-three-dots-vertical"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="editPlatform({{ platform.id }})">
-                                    <i class="bi bi-pencil me-2"></i>Edit
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="viewPlatformStats({{ platform.id }})">
-                                    <i class="bi bi-graph-up me-2"></i>Statistics
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="#" onclick="deletePlatform({{ platform.id }})">
-                                    <i class="bi bi-trash me-2"></i>Delete
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    {% if platform.url %}
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-link-45deg me-2 text-muted"></i>
-                        <a href="{{ platform.url }}" target="_blank" class="text-decoration-none text-truncate">
-                            {{ platform.url }}
-                        </a>
-                    </div>
-                    {% endif %}
-                    
-                    {% if platform.api_key %}
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-key me-2 text-muted"></i>
-                        <small class="text-success">API Key Configured</small>
-                    </div>
-                    {% endif %}
-                    
-                    {% if platform.description %}
-                    <p class="text-muted small">{{ platform.description }}</p>
-                    {% endif %}
-                </div>
-                
-                <!-- Platform Stats (Mock data for now) -->
-                <div class="row text-center mb-3">
-                    <div class="col">
-                        <div class="fw-bold text-primary">{{ range(5, 25)|random }}</div>
-                        <small class="text-muted">Reports</small>
-                    </div>
-                    <div class="col">
-                        <div class="fw-bold text-success">${{ range(500, 5000)|random }}</div>
-                        <small class="text-muted">Earned</small>
-                    </div>
-                    <div class="col">
-                        <div class="fw-bold text-info">{{ range(70, 95)|random }}%</div>
-                        <small class="text-muted">Success</small>
-                    </div>
-                </div>
-                
-                <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title">{{ platform.name }}</h5>
+                <p class="text-muted small">{{ platform.description or 'No description provided.' }}</p>
+                 <div class="d-flex justify-content-between align-items-center mt-4">
                     <span class="badge {{ 'bg-success' if platform.is_active else 'bg-secondary' }}">
                         {{ 'Active' if platform.is_active else 'Inactive' }}
                     </span>
-                    <small class="text-muted">
-                        Added {{ platform.created_at.split(' ')[0] if platform.created_at else 'Recently' }}
-                    </small>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-light" onclick="openPlatformModal({{ platform.id }})"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deletePlatform({{ platform.id }})"><i class="bi bi-trash"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="col-12">
-        <div class="text-center py-5">
-            <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
-            <h4 class="text-muted mt-3">No platforms added yet</h4>
-            <p class="text-muted">Add your first bug bounty platform to get started</p>
-            <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#platformModal" onclick="openPlatformModal()">
-                <i class="bi bi-plus-lg me-2"></i>Add Your First Platform
-            </button>
-        </div>
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mt-3">No platforms added yet</h4>
     </div>
     {% endfor %}
 </div>
 
-<!-- Popular Platforms Quick Add -->
-{% if not platforms %}
-<div class="row mt-5">
-    <div class="col">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-stars me-2"></i>Popular Bug Bounty Platforms
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <button class="btn btn-outline-primary w-100" onclick="addPopularPlatform('HackerOne', 'https://hackerone.com', 'public')">
-                            <div class="d-flex flex-column align-items-center">
-                                <i class="bi bi-shield-check mb-2" style="font-size: 2rem;"></i>
-                                <strong>HackerOne</strong>
-                                <small class="text-muted">Most Popular</small>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-outline-primary w-100" onclick="addPopularPlatform('Bugcrowd', 'https://bugcrowd.com', 'public')">
-                            <div class="d-flex flex-column align-items-center">
-                                <i class="bi bi-bug mb-2" style="font-size: 2rem;"></i>
-                                <strong>Bugcrowd</strong>
-                                <small class="text-muted">Crowdsourced</small>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-outline-primary w-100" onclick="addPopularPlatform('Intigriti', 'https://intigriti.com', 'public')">
-                            <div class="d-flex flex-column align-items-center">
-                                <i class="bi bi-globe mb-2" style="font-size: 2rem;"></i>
-                                <strong>Intigriti</strong>
-                                <small class="text-muted">European Focus</small>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-outline-primary w-100" onclick="addPopularPlatform('YesWeHack', 'https://yeswehack.com', 'public')">
-                            <div class="d-flex flex-column align-items-center">
-                                <i class="bi bi-check-circle mb-2" style="font-size: 2rem;"></i>
-                                <strong>YesWeHack</strong>
-                                <small class="text-muted">Global Platform</small>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Platform Modal -->
 <div class="modal fade" id="platformModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-building me-2"></i>
-                    <span id="modalTitle">Add Platform</span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="modalTitle">Add Platform</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="platformForm">
                 <div class="modal-body">
                     <input type="hidden" id="platformId" name="id">
-                    
                     <div class="mb-3">
                         <label for="platformName" class="form-label">Platform Name</label>
-                        <input type="text" class="form-control" id="platformName" name="name" required
-                               placeholder="e.g., HackerOne, Bugcrowd">
+                        <input type="text" class="form-control" id="platformName" name="name" required>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="platformUrl" class="form-label">Platform URL</label>
-                        <input type="url" class="form-control" id="platformUrl" name="url"
-                               placeholder="https://hackerone.com">
+                        <input type="url" class="form-control" id="platformUrl" name="url">
                     </div>
-                    
                     <div class="mb-3">
-                        <label for="platformType" class="form-label">Platform Type</label>
-                        <select class="form-select" id="platformType" name="platform_type">
-                            <option value="public">Public Program</option>
-                            <option value="private">Private/Invite Only</option>
-                            <option value="vdp">VDP (No Rewards)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="platformDescription" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="platformDescription" name="description" rows="3"
-                                  placeholder="Brief description of this platform or program"></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="apiKey" class="form-label">API Key (Optional)</label>
-                        <input type="password" class="form-control" id="apiKey" name="api_key"
-                               placeholder="For automated integration">
-                        <div class="form-text">This will be encrypted and stored securely</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isActive" name="is_active" checked>
-                            <label class="form-check-label" for="isActive">
-                                Platform is active
-                            </label>
-                        </div>
+                        <label for="platformDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="platformDescription" name="description" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-gradient">
-                        <i class="bi bi-check-lg me-2"></i>Save Platform
-                    </button>
+                    <button type="submit" class="btn btn-gradient">Save Platform</button>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
-
-<!-- Platform Statistics Modal -->
-<div class="modal fade" id="statsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-graph-up me-2"></i>
-                    <span id="statsModalTitle">Platform Statistics</span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="platformStatsContent">
-                    <!-- Statistics content will be loaded here -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this platform?</p>
-                <p class="text-muted small">This action cannot be undone and will remove all associated data.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">
-                    <i class="bi bi-trash me-2"></i>Delete Platform
-                </button>
-            </div>
         </div>
     </div>
 </div>
@@ -364,187 +76,53 @@
 
 {% block scripts %}
 <script>
-let currentPlatformId = null;
+    let currentPlatformId = null;
+    const platformModal = new bootstrap.Modal(document.getElementById('platformModal'));
 
-// Open platform modal for add/edit
-function openPlatformModal(platformId = null) {
-    const modal = document.getElementById('platformModal');
-    const form = document.getElementById('platformForm');
-    const title = document.getElementById('modalTitle');
-    
-    // Reset form
-    form.reset();
-    
-    if (platformId) {
+    function openPlatformModal(platformId = null) {
+        const form = document.getElementById('platformForm');
+        form.reset();
         currentPlatformId = platformId;
-        title.textContent = 'Edit Platform';
-        loadPlatformData(platformId);
-    } else {
-        currentPlatformId = null;
-        title.textContent = 'Add Platform';
-        document.getElementById('isActive').checked = true;
+
+        if (platformId) {
+            document.getElementById('modalTitle').textContent = 'Edit Platform';
+            API.request(`/api/platforms/${platformId}`).then(response => {
+                const platform = response.data;
+                document.getElementById('platformId').value = platform.id;
+                document.getElementById('platformName').value = platform.name;
+                document.getElementById('platformUrl').value = platform.url;
+                document.getElementById('platformDescription').value = platform.description;
+            });
+        } else {
+            document.getElementById('modalTitle').textContent = 'Add Platform';
+        }
     }
-}
-
-// Load platform data for editing
-async function loadPlatformData(platformId) {
-    try {
-        const response = await API.request(`/api/platforms/${platformId}`);
-        const platform = response.data;
-        
-        document.getElementById('platformId').value = platform.id;
-        document.getElementById('platformName').value = platform.name || '';
-        document.getElementById('platformUrl').value = platform.url || '';
-        document.getElementById('platformType').value = platform.platform_type || 'public';
-        document.getElementById('platformDescription').value = platform.description || '';
-        document.getElementById('apiKey').value = platform.api_key || '';
-        document.getElementById('isActive').checked = platform.is_active;
-        
-    } catch (error) {
-        API.showToast('Error loading platform data', 'error');
-    }
-}
-
-// Edit platform
-function editPlatform(platformId) {
-    openPlatformModal(platformId);
-    new bootstrap.Modal(document.getElementById('platformModal')).show();
-}
-
-// View platform statistics
-function viewPlatformStats(platformId) {
-    // Mock statistics data for demonstration
-    const statsContent = document.getElementById('platformStatsContent');
-    document.getElementById('statsModalTitle').textContent = 'Platform Statistics';
     
-    statsContent.innerHTML = `
-        <div class="row g-4 mb-4">
-            <div class="col-md-3 text-center">
-                <div class="h3 text-primary">${Math.floor(Math.random() * 50) + 10}</div>
-                <div class="text-muted">Total Reports</div>
-            </div>
-            <div class="col-md-3 text-center">
-                <div class="h3 text-success">$${Math.floor(Math.random() * 5000) + 1000}</div>
-                <div class="text-muted">Total Earnings</div>
-            </div>
-            <div class="col-md-3 text-center">
-                <div class="h3 text-warning">${Math.floor(Math.random() * 30) + 60}%</div>
-                <div class="text-muted">Success Rate</div>
-            </div>
-            <div class="col-md-3 text-center">
-                <div class="h3 text-info">${Math.floor(Math.random() * 10) + 5}</div>
-                <div class="text-muted">This Month</div>
-            </div>
-        </div>
-        
-        <h6>Recent Activity</h6>
-        <div class="list-group">
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <strong>XSS Vulnerability Reported</strong>
-                        <div class="text-muted small">Submitted bug report for reflected XSS</div>
-                    </div>
-                    <span class="badge bg-success">$500</span>
-                </div>
-            </div>
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <strong>SQL Injection Found</strong>
-                        <div class="text-muted small">Critical vulnerability discovered</div>
-                    </div>
-                    <span class="badge bg-success">$1200</span>
-                </div>
-            </div>
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <strong>CSRF Protection Bypass</strong>
-                        <div class="text-muted small">Authentication bypass vulnerability</div>
-                    </div>
-                    <span class="badge bg-warning">Pending</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    new bootstrap.Modal(document.getElementById('statsModal')).show();
-}
-
-// Delete platform
-function deletePlatform(platformId) {
-    currentPlatformId = platformId;
-    new bootstrap.Modal(document.getElementById('deleteModal')).show();
-}
-
-// Add popular platform
-function addPopularPlatform(name, url, type) {
-    document.getElementById('platformName').value = name;
-    document.getElementById('platformUrl').value = url;
-    document.getElementById('platformType').value = type;
-    document.getElementById('isActive').checked = true;
-    
-    new bootstrap.Modal(document.getElementById('platformModal')).show();
-}
-
-// Handle form submission
-document.getElementById('platformForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    data.is_active = document.getElementById('isActive').checked;
-    
-    try {
-        const url = currentPlatformId ? 
-            `/api/platforms/${currentPlatformId}` : 
-            '/api/platforms';
+    document.getElementById('platformForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        const url = currentPlatformId ? `/api/platforms/${currentPlatformId}` : '/api/platforms';
         const method = currentPlatformId ? 'PUT' : 'POST';
-        
-        await API.request(url, {
-            method: method,
-            body: JSON.stringify(data)
-        });
-        
-        API.showToast(`Platform ${currentPlatformId ? 'updated' : 'added'} successfully!`, 'success');
-        bootstrap.Modal.getInstance(document.getElementById('platformModal')).hide();
-        
-        // Reload page to show changes
-        setTimeout(() => location.reload(), 1000);
-        
-    } catch (error) {
-        API.showToast(error.message || 'Error saving platform', 'error');
-    }
-});
 
-// Handle delete confirmation
-document.getElementById('confirmDelete').addEventListener('click', async function() {
-    if (!currentPlatformId) return;
-    
-    try {
-        await API.request(`/api/platforms/${currentPlatformId}`, {
-            method: 'DELETE'
-        });
-        
-        API.showToast('Platform deleted successfully!', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-        
-        // Remove the platform card from DOM
-        const platformCard = document.querySelector(`[data-platform-id="${currentPlatformId}"]`);
-        if (platformCard) {
-            platformCard.remove();
-        }
-        
-        // Check if no platforms left
-        const remainingPlatforms = document.querySelectorAll('[data-platform-id]');
-        if (remainingPlatforms.length === 0) {
+        try {
+            await API.request(url, { method: method, body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
+            platformModal.hide();
             location.reload();
+        } catch (error) {
+            console.error('Failed to save platform:', error);
         }
-        
-    } catch (error) {
-        API.showToast(error.message || 'Error deleting platform', 'error');
+    });
+
+    async function deletePlatform(platformId) {
+        if (confirm('Are you sure you want to delete this platform?')) {
+            try {
+                await API.request(`/api/platforms/${platformId}`, { method: 'DELETE' });
+                location.reload();
+            } catch (error) {
+                console.error('Failed to delete platform:', error);
+            }
+        }
     }
-});
 </script>
 {% endblock %}

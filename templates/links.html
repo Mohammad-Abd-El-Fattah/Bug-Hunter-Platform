@@ -7,7 +7,7 @@
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 text-dark fw-bold">
+                <h1 class="h3 fw-bold">
                     <i class="bi bi-link-45deg me-2"></i>Useful Links
                 </h1>
                 <p class="text-muted">A collection of your favorite tools, resources, and references</p>
@@ -21,7 +21,7 @@
 
 <div class="card">
     <div class="card-body">
-        <table class="table table-hover">
+        <table class="table table-dark table-hover">
             <thead>
                 <tr>
                     <th>Title</th>
@@ -38,7 +38,7 @@
                     <td><span class="badge bg-secondary">{{ link.category|title }}</span></td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" onclick="openLinkModal({{ link.id }})">
+                            <button class="btn btn-outline-light" onclick="openLinkModal({{ link.id }})">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="btn btn-outline-danger" onclick="deleteLink({{ link.id }})">
@@ -66,7 +66,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="linkModalTitle">Add New Link</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="linkForm">
                 <div class="modal-body">
